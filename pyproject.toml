@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "stashenv"
+version = "0.1.0"
+description = "Securely store and switch between named .env profiles per project."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "click>=8.1",
+    "cryptography>=42.0",
+]
+
+[project.scripts]
+stashenv = "stashenv.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["stashenv*"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-tmp-files"]
