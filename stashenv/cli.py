@@ -1,72 +1,65 @@
-"""CLI entry point for stashenv."""
-
-import sys
-from pathlib import Path
 import click
 from stashenv.store import save_profile, load_profile, list_profiles, delete_profile
-
-
-PROJECT_DIR = Path.cwd()
+from stashenv.cli_audit import audit
+from stashenv.cli_template import template
+from stashenv.cli_snapshot import snapshot
 
 
 @click.group()
 def cli():
-    """stashenv — securely store and switch .env profiles."""
+    """stashenv — securely manage .env profiles."""
 
 
-@cli.command("save")
-@click.argument("name")
-@click.option("--file", "env_file", default=".env", show_default=True, help="Path to .env file to stash.")
-@click.password_option(prompt="Encryption password")
-def save(name, env_file, password):
-    """Save current .env as a named profile."""
-    path = Path(env_file)
-    if not path.exists():
-        click.echo(f"Error: '{env_file}' not found.", err=True)
-        sys.exit(1)
-    save_profile(PROJECT_DIR, name, path.read_text(), password)
-    click.echo(f"Profile '{name}' saved.")
+@cli.command()
+@click.argument("project")
+@click.argument("profile")
+@click.argument("envfile", type=click.Path(exists=True))
+@click.password_option()
+def save(project, profile, envfile, password):
+    """Save an .env file as a named profile."""
+    with open(envfile) as f:
+        data = f.read()
+    save_profile(project, profile, data, password)
+    click.echo(f"Profile '{profile}' saved for project '{project}'.")
 
 
-@cli.command("load")
-@click.argument("name")
-@click.option("--out", default=".env", show_default=True, help="Output .env file path.")
-@click.option("--password", prompt=True, hide_input=True)
-def load(name, out, password):
-    """Load a named profile into .env."""
-    try:
-        content = load_profile(PROJECT_DIR, name, password)
-    except FileNotFoundError as e:
-        click.echo(str(e), err=True)
-        sys.exit(1)
-    except Exception:
-        click.echo("Error: decryption failed — wrong password?", err=True)
-        sys.exit(1)
-    Path(out).write_text(content)
-    click.echo(f"Profile '{name}' loaded into '{out}'.")
+@cli.command()
+@click.argument("project")
+@click.argument("profile")
+@click.option("--out", default=".env", show_default=True)
+@click.password_option(confirmation_prompt=False)
+def load(project, profile, out, password):
+    """Load a profile into an .env file."""
+    data = load_profile(project, profile, password)
+    with open(out, "w") as f:
+        f.write(data)
+    click.echo(f"Profile '{profile}' written to '{out}'.")
 
 
-@cli.command("list")
-def list_cmd():
-    """List saved profiles."""
-    profiles = list_profiles(PROJECT_DIR)
+@cli.command(name="list")
+@click.argument("project")
+def list_cmd(project):
+    """List profiles for a project."""
+    profiles = list_profiles(project)
     if not profiles:
         click.echo("No profiles found.")
     for p in profiles:
-        click.echo(f"  {p}")
+        click.echo(p)
 
 
-@cli.command("delete")
-@click.argument("name")
-def delete(name):
-    """Delete a named profile."""
+@cli.command()
+@click.argument("project")
+@click.argument("profile")
+def delete(project, profile):
+    """Delete a profile."""
     try:
-        delete_profile(PROJECT_DIR, name)
-        click.echo(f"Profile '{name}' deleted.")
+        delete_profile(project, profile)
+        click.echo(f"Profile '{profile}' deleted.")
     except FileNotFoundError as e:
-        click.echo(str(e), err=True)
-        sys.exit(1)
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
 
 
-if __name__ == "__main__":
-    cli()
+cli.add_command(audit)
+cli.add_command(template)
+cli.add_command(snapshot)
