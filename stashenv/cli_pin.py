@@ -56,5 +56,18 @@ def check_cmd(project: str, profile: str) -> None:
         msg = f"'{profile}' is NOT pinned."
         if current:
             msg += f" Current pin: '{current}'."
-        click.echo(msg)
+        click.echo(msg, err=True)
         raise SystemExit(1)
+
+
+@pin.command("list")
+def list_cmd() -> None:
+    """List all projects that have a pinned profile."""
+    from stashenv.pin import list_pinned
+
+    pins = list_pinned()
+    if not pins:
+        click.echo("No pinned profiles found.")
+        return
+    for project, profile in sorted(pins.items()):
+        click.echo(f"{project}: {profile}")
