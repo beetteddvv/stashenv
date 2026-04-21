@@ -47,6 +47,14 @@ def clear_history(project: str) -> None:
         path.unlink()
 
 
+def history_for_profile(project: str, profile: str) -> List[dict]:
+    """Return all load events for a specific profile, most recent first."""
+    return [
+        e for e in get_history(project)
+        if e.get("profile") == profile
+    ]
+
+
 def format_history(entries: List[dict]) -> str:
     lines = []
     for e in entries:
