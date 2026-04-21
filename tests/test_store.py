@@ -52,3 +52,12 @@ def test_encrypted_file_is_not_plaintext(project):
     save_profile(project, "dev", SAMPLE_ENV, PASSWORD)
     raw = (project / ".stashenv" / "dev.enc").read_bytes()
     assert b"API_KEY" not in raw
+
+
+def test_overwrite_profile(project):
+    """Saving a profile twice with new content should update the stored value."""
+    save_profile(project, "dev", SAMPLE_ENV, PASSWORD)
+    updated_env = "API_KEY=xyz999\nDEBUG=false\n"
+    save_profile(project, "dev", updated_env, PASSWORD)
+    result = load_profile(project, "dev", PASSWORD)
+    assert result == updated_env
