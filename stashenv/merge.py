@@ -1,7 +1,7 @@
 """Merge two profiles together, with optional conflict resolution strategies."""
 
 from enum import Enum
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 
 class MergeStrategy(str, Enum):
@@ -24,7 +24,7 @@ def merge_envs(
     base: Dict[str, str],
     incoming: Dict[str, str],
     strategy: MergeStrategy = MergeStrategy.THEIRS,
-) -> Tuple[Dict[str, str], list]:
+) -> Tuple[Dict[str, str], List[str]]:
     """
     Merge incoming into base.
 
@@ -49,3 +49,21 @@ def merge_envs(
                 raise MergeConflict(key, merged[key], value)
 
     return merged, conflicts
+
+
+def diff_envs(
+    base: Dict[str, str],
+    incoming: Dict[str, str],
+) -> Dict[str, Tuple[str | None, str | None]]:
+    """
+    Return a diff of two env dicts.
+
+    Returns a dict mapping each changed key to a (base_value, incoming_value) tuple.
+    A value of None means the key is absent in that side.
+    """
+    all_keys = set(base) | set(incoming)
+    return {
+        key: (base.get(key), incoming.get(key))
+        for key in all_keys
+        if base.get(key) != incoming.get(key)
+    }
