@@ -62,3 +62,12 @@ def clear_tags(project: str, profile: str) -> None:
     if profile in data:
         del data[profile]
     _save_tags(project, data)
+
+
+def all_tags(project: str) -> List[str]:
+    """Return a sorted list of all unique tags used across all profiles."""
+    data = _load_tags(project)
+    unique_tags: set = set()
+    for tags in data.values():
+        unique_tags.update(tags)
+    return sorted(unique_tags)
